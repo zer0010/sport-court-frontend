@@ -60,7 +60,7 @@ export default function RootLayout() {
     );
   }
 
-  // Use Slot to render child routes - this is the expo-router v6 recommended pattern
+  // Use Slot to render child routes - this is the expo-router v4 pattern
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Slot />
