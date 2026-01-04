@@ -44,7 +44,7 @@ if (getRNMinorVersion() >= 75) {
   }
 }
 
-rootProject.name = 'Sport Court Booking'
+rootProject.name = 'Book a Game'
 
 dependencyResolutionManagement {
   versionCatalogs {

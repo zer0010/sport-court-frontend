@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     View,
     Text,
@@ -6,22 +6,77 @@ import {
     FlatList,
     ActivityIndicator,
     RefreshControl,
+    TouchableOpacity,
+    Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
 import Colors from "@/constants/Colors";
+import { apiService, getErrorMessage } from "@/services/api";
+import { VenueListItem } from "@/interfaces/types";
+import VenueCard from "@/components/VenueCard";
+
+interface FavoriteItem {
+    id: string;
+    venue_id: string;
+    venue: VenueListItem;
+    created_at: string;
+}
 
 export default function FavoritesPage() {
-    const [refreshing, setRefreshing] = React.useState(false);
+    const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [removingId, setRemovingId] = useState<string | null>(null);
 
-    // TODO: Connect to API in Phase 2
-    const favorites: any[] = [];
-    const isLoading = false;
+    const loadFavorites = async () => {
+        try {
+            const response = await apiService.getFavorites();
+            const data = response.data.data || response.data.favorites || response.data || [];
+            setFavorites(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error("Failed to load favorites:", getErrorMessage(error));
+        } finally {
+            setIsLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    // Load on focus (when tab is selected)
+    useFocusEffect(
+        useCallback(() => {
+            loadFavorites();
+        }, [])
+    );
 
     const onRefresh = async () => {
         setRefreshing(true);
-        // TODO: Fetch favorites from API
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setRefreshing(false);
+        await loadFavorites();
+    };
+
+    const handleRemoveFavorite = async (venueId: string) => {
+        Alert.alert(
+            "Remove Favorite",
+            "Are you sure you want to remove this venue from your favorites?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Remove",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            setRemovingId(venueId);
+                            await apiService.removeFavorite(venueId);
+                            setFavorites(prev => prev.filter(f => f.venue_id !== venueId));
+                        } catch (error) {
+                            Alert.alert("Error", getErrorMessage(error));
+                        } finally {
+                            setRemovingId(null);
+                        }
+                    },
+                },
+            ]
+        );
     };
 
     if (isLoading) {
@@ -50,7 +105,7 @@ export default function FavoritesPage() {
         <View style={styles.container}>
             <FlatList
                 data={favorites}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item.id || item.venue_id}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
@@ -58,10 +113,21 @@ export default function FavoritesPage() {
                         colors={[Colors.primary]}
                     />
                 }
+                contentContainerStyle={styles.listContent}
                 renderItem={({ item }) => (
-                    // TODO: Create VenueCard component in Phase 2
-                    <View style={styles.venueCard}>
-                        <Text>{item.name}</Text>
+                    <View style={styles.favoriteItem}>
+                        <VenueCard venue={item.venue} />
+                        <TouchableOpacity
+                            style={styles.removeButton}
+                            onPress={() => handleRemoveFavorite(item.venue_id)}
+                            disabled={removingId === item.venue_id}
+                        >
+                            {removingId === item.venue_id ? (
+                                <ActivityIndicator size="small" color="#FF3B30" />
+                            ) : (
+                                <Ionicons name="heart" size={24} color="#FF3B30" />
+                            )}
+                        </TouchableOpacity>
                     </View>
                 )}
             />
@@ -109,9 +175,26 @@ const styles = StyleSheet.create({
         textAlign: "center",
         lineHeight: 20,
     },
-    venueCard: {
+    listContent: {
         padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.lightGrey || "#e0e0e0",
+    },
+    favoriteItem: {
+        position: "relative",
+    },
+    removeButton: {
+        position: "absolute",
+        top: 12,
+        right: 12,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: "rgba(255,255,255,0.9)",
+        justifyContent: "center",
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
 });

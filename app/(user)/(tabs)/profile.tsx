@@ -40,7 +40,7 @@ export default function ProfilePage() {
             title: "Personal Information",
             subtitle: "Update your name, email, and phone",
             onPress: () => {
-                // TODO: Navigate to edit profile
+                router.push("/edit-profile");
             },
         },
         {
@@ -48,7 +48,7 @@ export default function ProfilePage() {
             title: "Notifications",
             subtitle: "Manage your notification preferences",
             onPress: () => {
-                // TODO: Navigate to notification settings
+                router.push("/notifications");
             },
         },
         {
@@ -124,7 +124,7 @@ export default function ProfilePage() {
             </TouchableOpacity>
 
             {/* App Version */}
-            <Text style={styles.version}>Sport Court Booking v1.0.0</Text>
+            <Text style={styles.version}>Book a Game v1.0.0</Text>
         </ScrollView>
     );
 }

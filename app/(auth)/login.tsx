@@ -52,7 +52,7 @@ export default function LoginScreen() {
                     <View style={styles.iconContainer}>
                         <Ionicons name="football-outline" size={60} color={Colors.primary} />
                     </View>
-                    <Text style={styles.title}>Sport Court</Text>
+                    <Text style={styles.title}>Book a Game</Text>
                     <Text style={styles.subtitle}>Book your favorite courts instantly</Text>
                 </View>
 

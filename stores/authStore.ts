@@ -76,23 +76,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
     },
 
-    // Register as User (Player)
+    // Register as User (Player) - Does NOT auto-login
     registerUser: async (data: RegisterRequest): Promise<boolean> => {
         set({ isLoading: true, error: null });
         try {
             const response = await api.post<any>('/auth/register/user', data);
             const resData = response.data;
 
-            // Backend returns: { message, user, profile, access_token, refresh_token }
-            if (resData.access_token && resData.refresh_token) {
-                await tokenStorage.setTokens(resData.access_token, resData.refresh_token);
-                const user = resData.profile || resData.user;
-                set({
-                    user,
-                    isAuthenticated: true,
-                    isLoading: false,
-                    error: null
-                });
+            // Registration successful - do NOT auto-login
+            // User should manually log in after registration
+            if (resData.message || resData.profile || resData.user) {
+                set({ isLoading: false, error: null });
                 return true;
             }
 
@@ -108,23 +102,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
     },
 
-    // Register as Owner
+    // Register as Owner - Does NOT auto-login
     registerOwner: async (data: RegisterRequest): Promise<boolean> => {
         set({ isLoading: true, error: null });
         try {
             const response = await api.post<any>('/auth/register/owner', data);
             const resData = response.data;
 
-            // Backend returns: { message, user, profile, access_token, refresh_token }
-            if (resData.access_token && resData.refresh_token) {
-                await tokenStorage.setTokens(resData.access_token, resData.refresh_token);
-                const user = resData.profile || resData.user;
-                set({
-                    user,
-                    isAuthenticated: true,
-                    isLoading: false,
-                    error: null
-                });
+            // Registration successful - do NOT auto-login
+            // User should manually log in after registration
+            if (resData.message || resData.profile || resData.user) {
+                set({ isLoading: false, error: null });
                 return true;
             }
 

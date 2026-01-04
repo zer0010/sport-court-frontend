@@ -97,15 +97,15 @@ const VenuesMap = memo(({ venues }: Props) => {
           <Marker
             key={venue.id}
             coordinate={{
-              latitude: venue.latitude,
-              longitude: venue.longitude,
+              latitude: venue.lat ?? venue.latitude ?? 0,
+              longitude: venue.lng ?? venue.longitude ?? 0,
             }}
             onPress={() => onMarkerSelected(venue)}
           >
             <View style={styles.marker}>
               <Ionicons name="location" size={20} color={Colors.primary} />
               <Text style={styles.markerText}>
-                Rs. {venue.min_price}/hr
+                Rs. {venue.price_range?.min || venue.min_price}/hr
               </Text>
             </View>
           </Marker>

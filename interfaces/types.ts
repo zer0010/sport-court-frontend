@@ -14,32 +14,42 @@ export interface Venue {
     id: string;
     name: string;
     address: string;
-    latitude: number;
-    longitude: number;
-    photos: string[];
+    lat: number;
+    lng: number;
+    photos?: string[];
     description?: string;
-    operating_hours: { [day: string]: { open: string; close: string } };
-    amenities: string[];
+    operating_hours?: { opening?: string; closing?: string; days?: string[] };
+    amenities?: string[];
     rating: number;
     review_count: number;
     courts: Court[];
     owner_id: string;
-    status: 'pending' | 'approved' | 'rejected';
+    approved: boolean;
+    active: boolean;
+    sports?: string[]; // Derived from courts
 }
 
 export interface VenueListItem {
     id: string;
     name: string;
     address: string;
-    latitude: number;
-    longitude: number;
+    lat: number;
+    lng: number;
+    // Alias for map compatibility
+    latitude?: number;
+    longitude?: number;
+    photos?: string[];
     main_photo?: string;
     rating: number;
     review_count: number;
-    min_price: number;
-    max_price: number;
-    sport_types: string[];
+    min_price?: number;
+    max_price?: number;
+    price_range?: { min: number; max: number };
+    sports?: string[]; // Backend returns 'sports' field
+    sport_types?: string[]; // Alias for backwards compat
     distance?: number;
+    distance_km?: number;
+    courts_count?: number;
 }
 
 // Court interfaces
@@ -49,6 +59,7 @@ export interface Court {
     name: string;
     sport_type: string;
     base_price: number;
+    hourly_rate?: number; // Alias for base_price (backward compatibility)
     photos: string[];
     is_active: boolean;
 }
@@ -67,6 +78,9 @@ export interface Booking {
     source: 'online' | 'walk_in';
     court?: Court;
     venue?: Venue;
+    user?: { name: string; phone?: string }; // For owner dashboard display
+    guest_name?: string; // Walk-in bookings
+    guest_phone?: string;
     created_at: string;
 }
 

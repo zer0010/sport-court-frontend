@@ -2,7 +2,19 @@ import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'ax
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
+// Helper to get the correct API URL based on platform
+const getApiUrl = () => {
+    const url = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5050/api';
+
+    // If on Android and using localhost, swap to 10.0.2.2 (Emulator)
+    if (Platform.OS === 'android' && url.includes('localhost')) {
+        return url.replace('localhost', '10.0.2.2');
+    }
+
+    return url;
+};
+
+const API_URL = getApiUrl();
 
 // Token storage keys
 const ACCESS_TOKEN_KEY = 'access_token';
@@ -128,7 +140,8 @@ export const getErrorMessage = (error: unknown): string => {
 
 // API Wrapper Functions
 export const apiService = {
-    getVenues: async (params?: { sport_type?: string; limit?: number; offset?: number }) => {
+    // Venues
+    getVenues: async (params?: { sport_type?: string; lat?: number; lng?: number; radius?: number; limit?: number; offset?: number }) => {
         return api.get('/venues', { params });
     },
 
@@ -136,6 +149,115 @@ export const apiService = {
         return api.get(`/venues/${id}`);
     },
 
-    // Auth functions (can be moved here later if needed)
+    getVenueAvailability: async (venueId: string) => {
+        return api.get(`/venues/${venueId}/availability`);
+    },
+
+    getVenueReviews: async (venueId: string, params?: { limit?: number; offset?: number }) => {
+        return api.get(`/venues/${venueId}/reviews`, { params });
+    },
+
+    getSportTypes: async () => {
+        return api.get('/venues/sports');
+    },
+
+    // Court Slots
+    getCourtSlots: async (courtId: string, date: string) => {
+        return api.get(`/courts/${courtId}/slots`, { params: { date } });
+    },
+
+    // Favorites
+    getFavorites: async () => {
+        return api.get('/users/favorites');
+    },
+
+    addFavorite: async (venueId: string) => {
+        return api.post(`/users/favorites/${venueId}`);
+    },
+
+    removeFavorite: async (venueId: string) => {
+        return api.delete(`/users/favorites/${venueId}`);
+    },
+
+    // Bookings
+    getBookings: async (params?: { status?: string; upcoming?: boolean }) => {
+        return api.get('/bookings', { params });
+    },
+
+    getBookingById: async (id: string) => {
+        return api.get(`/bookings/${id}`);
+    },
+
+    createBooking: async (data: { court_id: string; date: string; start_time: string; end_time: string }) => {
+        return api.post('/bookings', data);
+    },
+
+    cancelBooking: async (id: string, reason?: string) => {
+        return api.post(`/bookings/${id}/cancel`, { reason });
+    },
+
+    // Reviews
+    submitReview: async (bookingId: string, data: { rating: number; comment?: string }) => {
+        return api.post(`/reviews/bookings/${bookingId}/review`, data);
+    },
+
+    getMyReviews: async () => {
+        return api.get('/reviews/my-reviews');
+    },
+
+    // Owner APIs
+    owner: {
+        getVenues: async () => {
+            return api.get('/owner/venues');
+        },
+
+        createVenue: async (data: any) => {
+            return api.post('/owner/venues', data);
+        },
+
+        updateVenue: async (id: string, data: any) => {
+            return api.put(`/owner/venues/${id}`, data);
+        },
+
+        deleteVenue: async (id: string) => {
+            return api.delete(`/owner/venues/${id}`);
+        },
+
+        getVenueCourts: async (venueId: string) => {
+            return api.get(`/owner/venues/${venueId}/courts`);
+        },
+
+        createCourt: async (venueId: string, data: any) => {
+            return api.post(`/owner/venues/${venueId}/courts`, data);
+        },
+
+        getBookings: async (params?: { date?: string; court_id?: string }) => {
+            return api.get('/owner/bookings', { params });
+        },
+
+        getEarningsSummary: async () => {
+            return api.get('/owner/earnings/summary');
+        },
+
+        getDashboardStats: async () => {
+            return api.get('/owner/dashboard/stats');
+        },
+
+        getBlockedSlots: async (courtId: string) => {
+            return api.get(`/owner/courts/${courtId}/blocked-slots`);
+        },
+
+        createBlockedSlot: async (courtId: string, data: { date: string; start_time: string; end_time: string; reason?: string }) => {
+            return api.post(`/owner/courts/${courtId}/blocked-slots`, data);
+        },
+
+        deleteBlockedSlot: async (slotId: string) => {
+            return api.delete(`/owner/blocked-slots/${slotId}`);
+        },
+
+        createWalkin: async (data: { court_id: string; date: string; start_time: string; end_time: string; guest_name: string; guest_phone: string }) => {
+            return api.post('/owner/bookings/walk-in', data);
+        },
+    },
 };
 

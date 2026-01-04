@@ -139,7 +139,7 @@ export default function OwnerProfilePage() {
             </TouchableOpacity>
 
             {/* App Version */}
-            <Text style={styles.version}>Sport Court Booking v1.0.0 (Owner)</Text>
+            <Text style={styles.version}>Book a Game v1.0.0 (Owner)</Text>
         </ScrollView>
     );
 }

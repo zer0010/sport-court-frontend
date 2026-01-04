@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import {
     View,
     Text,
@@ -7,24 +7,54 @@ import {
     TouchableOpacity,
     RefreshControl,
     Image,
+    ActivityIndicator,
+    Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useRouter } from "expo-router";
 import Colors from "@/constants/Colors";
-import { useRouter } from "expo-router";
+import { apiService, getErrorMessage } from "@/services/api";
+
+interface OwnerVenue {
+    id: string;
+    name: string;
+    address: string;
+    main_photo?: string;
+    status: "pending" | "approved" | "rejected";
+    courts_count: number;
+    rating?: number;
+    review_count: number;
+    is_active: boolean;
+}
 
 export default function VenuesPage() {
     const router = useRouter();
-    const [refreshing, setRefreshing] = React.useState(false);
+    const [venues, setVenues] = useState<OwnerVenue[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
-    // TODO: Fetch from API in Phase 3
-    const venues: any[] = [];
-    const isLoading = false;
+    const loadVenues = async () => {
+        try {
+            const response = await apiService.owner.getVenues();
+            const data = response.data.data || response.data.venues || response.data || [];
+            setVenues(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error("Failed to load venues:", getErrorMessage(error));
+        } finally {
+            setIsLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    useFocusEffect(
+        useCallback(() => {
+            loadVenues();
+        }, [])
+    );
 
     const onRefresh = async () => {
         setRefreshing(true);
-        // TODO: Fetch venues from API
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setRefreshing(false);
+        await loadVenues();
     };
 
     const getStatusColor = (status: string) => {
@@ -40,12 +70,22 @@ export default function VenuesPage() {
         }
     };
 
-    const renderVenueCard = ({ item }: { item: any }) => (
+    const handleVenuePress = (venue: OwnerVenue) => {
+        // Navigate to venue detail/edit
+        router.push({
+            pathname: "/(owner)/venue-detail",
+            params: { id: venue.id }
+        });
+    };
+
+    const handleAddVenue = () => {
+        router.push("/(owner)/venue-form");
+    };
+
+    const renderVenueCard = ({ item }: { item: OwnerVenue }) => (
         <TouchableOpacity
             style={styles.venueCard}
-            onPress={() => {
-                // TODO: Navigate to venue details/edit
-            }}
+            onPress={() => handleVenuePress(item)}
         >
             <View style={styles.venueImageContainer}>
                 {item.main_photo ? (
@@ -88,14 +128,20 @@ export default function VenuesPage() {
         </TouchableOpacity>
     );
 
+    if (isLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={Colors.primary} />
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
             {/* Add Venue Button */}
             <TouchableOpacity
                 style={styles.addVenueButton}
-                onPress={() => {
-                    // TODO: Navigate to add venue form
-                }}
+                onPress={handleAddVenue}
             >
                 <Ionicons name="add-circle-outline" size={24} color={Colors.primary} />
                 <Text style={styles.addVenueText}>Add New Venue</Text>
@@ -112,9 +158,7 @@ export default function VenuesPage() {
                     </Text>
                     <TouchableOpacity
                         style={styles.emptyButton}
-                        onPress={() => {
-                            // TODO: Navigate to add venue form
-                        }}
+                        onPress={handleAddVenue}
                     >
                         <Text style={styles.emptyButtonText}>Add Venue</Text>
                     </TouchableOpacity>
@@ -141,6 +185,12 @@ export default function VenuesPage() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: "#fff",
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
         backgroundColor: "#fff",
     },
     addVenueButton: {

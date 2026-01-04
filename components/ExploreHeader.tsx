@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
 import React, { useRef, useState } from "react";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -52,23 +52,25 @@ interface Props {
 
 const ExploreHeader = ({ onCategoryChanged }: Props) => {
   const scrollRef = useRef<ScrollView>(null);
-  const catRef = useRef<Array<TouchableOpacity | null>>([]);
+  const catRef = useRef<Array<any | null>>([]);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const selectCategory = (index: number) => {
     const selected = catRef.current[index];
     setActiveIndex(index);
 
-    selected?.measure((x) => {
+    selected?.measure((x: number) => {
       scrollRef.current?.scrollTo({ x: x - 16, y: 0, animated: true });
     });
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     onCategoryChanged(categories[index].name);
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ backgroundColor: "#fff" }}>
       <View style={styles.container}>
         <View style={styles.actionRow}>
           <TouchableOpacity style={styles.searchBtn}>
@@ -137,7 +139,7 @@ export default ExploreHeader;
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "#fff",
-    height: 132,
+    paddingBottom: 16,
   },
   actionRow: {
     flexDirection: "row",

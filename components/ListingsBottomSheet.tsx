@@ -13,6 +13,7 @@ import {
   StyleSheet,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  ActivityIndicator,
 } from "react-native";
 import { defaultStyles } from "@/constants/Styles";
 import BottomSheet, {
@@ -23,13 +24,15 @@ import VenueCard from "./VenueCard";
 import { VenueListItem } from "@/interfaces/types";
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/Colors";
+import VenueCardSkeleton from "@/components/skeletons/VenueCardSkeleton";
 
 interface Props {
   category: string;
   venues?: VenueListItem[];
+  loading?: boolean;
 }
 
-const ListingsBottomSheet = ({ category, venues = [] }: Props) => {
+const ListingsBottomSheet = ({ category, venues = [], loading = false }: Props) => {
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<VenueListItem[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -43,11 +46,13 @@ const ListingsBottomSheet = ({ category, venues = [] }: Props) => {
     if (category === "All" || !category) {
       return venues;
     }
-    return venues.filter((venue) =>
-      venue.sport_types?.some(
+    return venues.filter((venue) => {
+      // Backend uses 'sports', frontend may expect 'sport_types'
+      const sportList = venue.sports || venue.sport_types || [];
+      return sportList.some(
         (sport) => sport.toLowerCase() === category.toLowerCase()
-      )
-    );
+      );
+    });
   }, [category, venues]);
 
   useEffect(() => {
@@ -121,11 +126,17 @@ const ListingsBottomSheet = ({ category, venues = [] }: Props) => {
             color: "#333",
           }}
         >
-          {filteredVenues.length} {filteredVenues.length === 1 ? "Venue" : "Venues"}
+          {loading ? "Loading..." : `${filteredVenues.length} ${filteredVenues.length === 1 ? "Venue" : "Venues"}`}
         </Text>
       </View>
       <View style={[defaultStyles.container, { paddingHorizontal: 16 }]}>
-        {data.length === 0 ? (
+        {loading ? (
+          <View style={{ marginTop: 10 }}>
+            {[1, 2, 3].map((i) => (
+              <VenueCardSkeleton key={i} />
+            ))}
+          </View>
+        ) : data.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="business-outline" size={48} color={Colors.grey} />
             <Text style={styles.emptyText}>No venues found</Text>

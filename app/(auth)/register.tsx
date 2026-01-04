@@ -61,7 +61,19 @@ export default function RegisterScreen() {
             success = await registerUser(registerData);
         }
 
-        if (!success && error) {
+        if (success) {
+            // Show success message and redirect to login
+            Alert.alert(
+                "Registration Successful! 🎉",
+                `Your ${selectedRole === "owner" ? "owner" : "player"} account has been created. Please log in with your credentials.`,
+                [
+                    {
+                        text: "Go to Login",
+                        onPress: () => router.replace("/(auth)/login"),
+                    },
+                ]
+            );
+        } else if (error) {
             Alert.alert("Registration Failed", error);
             clearError();
         }
@@ -89,7 +101,7 @@ export default function RegisterScreen() {
                 <View style={styles.header}>
                     <Text style={styles.title}>Create Account</Text>
                     <Text style={styles.subtitle}>
-                        Join Sport Court to start booking
+                        Join Book a Game to start booking
                     </Text>
                 </View>
 

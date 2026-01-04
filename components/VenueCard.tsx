@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
     View,
     Text,
@@ -6,25 +6,59 @@ import {
     Image,
     TouchableOpacity,
     Dimensions,
+    ActivityIndicator,
+    Alert,
+    Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Colors from "@/constants/Colors";
 import { VenueListItem } from "@/interfaces/types";
+import { apiService, getErrorMessage } from "@/services/api";
+import * as Haptics from "expo-haptics";
 
 const { width } = Dimensions.get("window");
 
 interface Props {
     venue: VenueListItem;
+    isFavorite?: boolean;
+    onFavoriteChange?: (venueId: string, isFavorite: boolean) => void;
+    hideFavoriteButton?: boolean;
 }
 
-const VenueCard = ({ venue }: Props) => {
+const VenueCard = ({ venue, isFavorite = false, onFavoriteChange, hideFavoriteButton = false }: Props) => {
+    const [favorite, setFavorite] = useState(isFavorite);
+    const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+
     const handlePress = () => {
         router.push(`/venue/${venue.id}`);
     };
 
+    const handleFavoritePress = async () => {
+        try {
+            setIsTogglingFavorite(true);
+            if (Platform.OS !== "web") {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+
+            if (favorite) {
+                await apiService.removeFavorite(venue.id);
+                setFavorite(false);
+                onFavoriteChange?.(venue.id, false);
+            } else {
+                await apiService.addFavorite(venue.id);
+                setFavorite(true);
+                onFavoriteChange?.(venue.id, true);
+            }
+        } catch (error) {
+            Alert.alert("Error", getErrorMessage(error));
+        } finally {
+            setIsTogglingFavorite(false);
+        }
+    };
+
     return (
-        <TouchableOpacity style={styles.container} onPress={handlePress}>
+        <TouchableOpacity style={styles.container} onPress={handlePress} activeOpacity={0.9}>
             {/* Image */}
             <View style={styles.imageContainer}>
                 {venue.main_photo ? (
@@ -35,9 +69,23 @@ const VenueCard = ({ venue }: Props) => {
                     </View>
                 )}
                 {/* Favorite Button */}
-                <TouchableOpacity style={styles.favoriteButton}>
-                    <Ionicons name="heart-outline" size={24} color="#fff" />
-                </TouchableOpacity>
+                {!hideFavoriteButton && (
+                    <TouchableOpacity
+                        style={styles.favoriteButton}
+                        onPress={handleFavoritePress}
+                        disabled={isTogglingFavorite}
+                    >
+                        {isTogglingFavorite ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                            <Ionicons
+                                name={favorite ? "heart" : "heart-outline"}
+                                size={24}
+                                color={favorite ? "#FF3B30" : "#fff"}
+                            />
+                        )}
+                    </TouchableOpacity>
+                )}
             </View>
 
             {/* Info */}
@@ -64,40 +112,52 @@ const VenueCard = ({ venue }: Props) => {
                 </Text>
 
                 {/* Sport Types */}
-                {venue.sport_types && venue.sport_types.length > 0 && (
-                    <View style={styles.sportsContainer}>
-                        {venue.sport_types.slice(0, 3).map((sport, index) => (
-                            <View key={index} style={styles.sportBadge}>
-                                <Text style={styles.sportText}>{sport}</Text>
-                            </View>
-                        ))}
-                        {venue.sport_types.length > 3 && (
-                            <Text style={styles.moreSports}>
-                                +{venue.sport_types.length - 3} more
-                            </Text>
-                        )}
-                    </View>
-                )}
+                {(() => {
+                    const sportList = venue.sports || venue.sport_types || [];
+                    return sportList.length > 0 && (
+                        <View style={styles.sportsContainer}>
+                            {sportList.slice(0, 3).map((sport: string, index: number) => (
+                                <View key={index} style={styles.sportBadge}>
+                                    <Text style={styles.sportText}>{sport}</Text>
+                                </View>
+                            ))}
+                            {sportList.length > 3 && (
+                                <Text style={styles.moreSports}>
+                                    +{sportList.length - 3} more
+                                </Text>
+                            )}
+                        </View>
+                    );
+                })()}
 
                 {/* Price */}
-                <View style={styles.priceContainer}>
-                    <Text style={styles.price}>
-                        Rs. {venue.min_price}
-                        {venue.max_price && venue.max_price !== venue.min_price
-                            ? ` - ${venue.max_price}`
-                            : ""}
-                    </Text>
-                    <Text style={styles.priceUnit}> / hour</Text>
-                </View>
+                {(() => {
+                    const minPrice = venue.min_price || venue.price_range?.min;
+                    const maxPrice = venue.max_price || venue.price_range?.max;
+                    if (!minPrice) return null;
+                    return (
+                        <View style={styles.priceContainer}>
+                            <Text style={styles.price}>
+                                Rs. {minPrice}
+                                {maxPrice && maxPrice !== minPrice ? ` - ${maxPrice}` : ""}
+                            </Text>
+                            <Text style={styles.priceUnit}> / hour</Text>
+                        </View>
+                    );
+                })()}
 
                 {/* Distance */}
-                {venue.distance !== undefined && (
-                    <Text style={styles.distance}>
-                        {venue.distance < 1
-                            ? `${(venue.distance * 1000).toFixed(0)} m away`
-                            : `${venue.distance.toFixed(1)} km away`}
-                    </Text>
-                )}
+                {(() => {
+                    const dist = venue.distance ?? venue.distance_km;
+                    if (dist === undefined) return null;
+                    return (
+                        <Text style={styles.distance}>
+                            {dist < 1
+                                ? `${(dist * 1000).toFixed(0)} m away`
+                                : `${dist.toFixed(1)} km away`}
+                        </Text>
+                    );
+                })()}
             </View>
         </TouchableOpacity>
     );
@@ -129,10 +189,10 @@ const styles = StyleSheet.create({
         position: "absolute",
         top: 12,
         right: 12,
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: "rgba(0,0,0,0.3)",
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: "rgba(0,0,0,0.4)",
         justifyContent: "center",
         alignItems: "center",
     },

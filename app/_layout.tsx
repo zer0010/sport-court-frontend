@@ -5,6 +5,7 @@ import Colors from "@/constants/Colors";
 import { ActivityIndicator, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useAuthStore } from "@/stores/authStore";
+import NetworkBanner from "@/components/ui/NetworkBanner";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -63,6 +64,7 @@ export default function RootLayout() {
   // Use Slot to render child routes - this is the expo-router v4 pattern
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <NetworkBanner />
       <Slot />
     </GestureHandlerRootView>
   );

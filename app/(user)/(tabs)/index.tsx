@@ -8,6 +8,7 @@ import { apiService, getErrorMessage } from "@/services/api";
 import { VenueListItem } from "@/interfaces/types";
 import Colors from "@/constants/Colors";
 
+
 export default function ExplorePage() {
     const [category, setCategory] = useState("All");
     const [venues, setVenues] = useState<VenueListItem[]>([]);
@@ -25,13 +26,17 @@ export default function ExplorePage() {
                 params.sport_type = category;
             }
 
+            console.log(`Fetching venues for category: ${category}`);
             const response = await apiService.getVenues(params);
 
             // Backend might return array directly or { data: [], ... }
             const data = response.data.data || response.data;
+            console.log(`Fetched ${Array.isArray(data) ? data.length : 0} venues`);
 
             if (Array.isArray(data)) {
                 setVenues(data);
+            } else if (data.venues && Array.isArray(data.venues)) {
+                setVenues(data.venues);
             } else {
                 setVenues([]);
             }
@@ -55,22 +60,10 @@ export default function ExplorePage() {
             />
 
             {/* Map shows filtered venues */}
-            <ListingsMap listingData={[]} />
-            {/* Note: ListingsMap/VenuesMap usually takes venues prop, but we're keeping backward compat wrapper for now. 
-                Ideally we should update ListingsMap to accept 'venues' prop directly or update the wrapper. 
-                Let's check ListingsMap implementation again if needed. 
-                For now passing empty array to old prop to satisfy TS, 
-                and we should update ListingsMap component to actually use the new data structure or pass it via venues prop if we updated it.
-            */}
+            <ListingsMap listingData={venues} />
 
             {/* Bottom sheet handles display */}
-            {loading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={Colors.primary} />
-                </View>
-            ) : (
-                <ListingsBottomSheet category={category} venues={venues} />
-            )}
+            <ListingsBottomSheet category={category} venues={venues} loading={loading} />
         </View>
     );
 }

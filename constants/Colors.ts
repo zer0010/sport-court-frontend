@@ -1,6 +1,13 @@
+// Brand colors from environment variables (change in .env file)
+const PRIMARY = process.env.EXPO_PUBLIC_COLOR_PRIMARY || "#00008B";
+const ACCENT = process.env.EXPO_PUBLIC_COLOR_ACCENT || "#CCFF00";
+
 export default {
-  // Primary brand color - sporty green
-  primary: "#2E7D32",
+  // Primary brand color - dark blue
+  primary: PRIMARY,
+
+  // Accent brand color - lime green
+  accent: ACCENT,
 
   // Text colors
   dark: "#1A1A1A",
